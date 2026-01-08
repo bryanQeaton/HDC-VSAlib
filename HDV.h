@@ -234,33 +234,34 @@ namespace hdc {
             }
         };
         std::unordered_map<std::string,word_query> word_map{};
-        void build(const std::vector<std::vector<std::string>> &data,const float &learning_rate) {
-            //to start i need to produce a mapping to random vectors, which will give me a vocabulary to work with
-            //then i need to train those vectors to model the relationships in the data
-            //if each individual row in the data set is a single instance then no training occurs
+        void build(const std::vector<std::vector<std::string>> &data,const float &learning_rate=.1,const float &pos_neg_ratio=.25f) {
+            auto data_context=HDV(true);
+            for (const auto &group:data) {
+                for (int i=0;i<static_cast<int>(group.size());i++) {
+                    if (!word_map.contains(group[i])) { //generate random HDV's for each word
+                        word_map[group[i]].word_hdv=HDV();
+                    }
+                    data_context+=word_map[group[i]].word_hdv;
+                }
+            }
             for (const auto &group:data) {
                 if (group.size()<=1) { //no training on single word groupings
                     continue;
                 }
                 auto group_context=HDV(true);
                 for (int i=0;i<static_cast<int>(group.size());i++) {
-                    if (!word_map.contains(group[i])) { //generate random HDV's for each word
-                        word_map[group[i]].word_hdv=HDV();
-                    }
                     group_context+=word_map[group[i]].word_hdv; //generate group context based on words
                 }
                 for (int i=0;i<static_cast<int>(group.size());i++) {
-                    HDV target=group_context-word_map[group[i]].word_hdv; //target is the group context minus the current word
-                    target.normalize();
+                    HDV positive_target=group_context-word_map[group[i]].word_hdv; //target is the group context minus the current word
+                    HDV negative_target=data_context-group_context;
+                    positive_target.normalize();
+                    negative_target.normalize();
                     //additive sampling is taking the word hdv and updating it towards the target
-                    word_map[group[i]].word_hdv=word_map[group[i]].word_hdv*(1-learning_rate)+target*learning_rate;
-                    //negative sampling is taking the word hdv and updating it away from a bundle of:
-
-                        //all words not in the current context?
-                        //a subset of words not in the current context?
-                        //a subset of other contexts?
-                        //a subset of all words?
-                        //all words except itself?
+                    word_map[group[i]].word_hdv=word_map[group[i]].word_hdv*(1-learning_rate)+positive_target*learning_rate;
+                    //negative sampling is taking the word hdv and updating it away from the bundle of context
+                    //across the entire dataset minus the current context
+                    word_map[group[i]].word_hdv=word_map[group[i]].word_hdv*(1-learning_rate*pos_neg_ratio)-negative_target*learning_rate*pos_neg_ratio;
                 }
 
 
@@ -290,36 +291,6 @@ namespace hdc {
 
         .train - takes in dataset to populate mapping and generate semantic data
         .infer - takes in word or set of words and infers similarities to other words in mapping
-
-
-
-
-
-        training function:
-            iterative across dataset:
-                take sentence and break it down to word|context pairing
-                adjust word towards target word via exponential weighted averaging
-                w(t+1)=w(t)*(1-L)+t_w*L
-                w(t+1)*=
-                this is also done subtractively across a subset of words in the vocab that ARE NOT
-                part of the current context
-                w(t+1)=w(t)*(1-L)-t_w*L
-
-                the ratio of negative updates must be <= the ratio of positive updates
-                with positive update ratio of 1 by iterating across the entire dataset
-                taking a subset of other words not including the current context should
-                follow that rule.
-
-
-
-
-        infer:
-            takes 2 words from vocab:
-                take words from vocab and return information on semantic similarity
-
-
-
-
         */
         //serialize
         HDVmap()=default;

@@ -55,24 +55,18 @@ std::vector<std::vector<std::string>> data = {
 };
 
 int main() {
-    int epochs=10;
+    int epochs=1000; float learning_rate=.1f; float pos_neg_ratio=.25f;
     auto model=hdc::HDVmap();
-    model.build(data,0.f);
     for (int i=1;i<=epochs;i++) {
-        std::cout<<"epoch: "<<i<<"\nlocal contextual similarity:\n";
-        std::cout<<"affection->devotion "<<hdc::similarity::cos(model.word_map["affection"],model.word_map["devotion"])<<"\n";
-        std::cout<<"start->genesis "<<hdc::similarity::cos(model.word_map["start"],model.word_map["genesis"])<<"\n\nglobal contextual similarity:\n";
-        std::cout<<"spirit->breath "<<hdc::similarity::cos(model.word_map["spirit"],model.word_map["breath"])<<"\n";
-        std::cout<<"wisdom->truth "<<hdc::similarity::cos(model.word_map["wisdom"],model.word_map["truth"])<<"\n\nno contextual similarity:\n";
-        std::cout<<"tide->reason "<<hdc::similarity::cos(model.word_map["tide"],model.word_map["reason"])<<"\n";
-        std::cout<<"void->justice "<<hdc::similarity::cos(model.word_map["void"],model.word_map["justice"])<<"\n============================\n";
-        if (i!=epochs) {
-            model.build(data,0.1f);
-        }
-
-
+        model.build(data,learning_rate,pos_neg_ratio);
     }
-
+    std::cout<<"epochs: "<<epochs<<"\nlocal contextual similarity:\n";
+    std::cout<<"affection->devotion "<<hdc::similarity::cos(model.word_map["affection"],model.word_map["devotion"])<<"\n";
+    std::cout<<"start->genesis "<<hdc::similarity::cos(model.word_map["start"],model.word_map["genesis"])<<"\n\nglobal contextual similarity:\n";
+    std::cout<<"spirit->breath "<<hdc::similarity::cos(model.word_map["spirit"],model.word_map["breath"])<<"\n";
+    std::cout<<"wisdom->truth "<<hdc::similarity::cos(model.word_map["wisdom"],model.word_map["truth"])<<"\n\nno contextual similarity:\n";
+    std::cout<<"tide->reason "<<hdc::similarity::cos(model.word_map["tide"],model.word_map["reason"])<<"\n";
+    std::cout<<"void->justice "<<hdc::similarity::cos(model.word_map["void"],model.word_map["justice"])<<"\n============================\n";
 
     return 0;
 }
