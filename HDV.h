@@ -6,6 +6,7 @@
 #include <chrono>
 #include "cereal/archives/binary.hpp"
 #include "cereal/types/vector.hpp"
+#include "cereal/types/string.hpp"
 #include "cereal/types/unordered_map.hpp"
 inline std::mt19937 gen(std::random_device{}());
 
@@ -116,9 +117,9 @@ namespace hdc {
         }
     };
     //bundling operation for defining heirarchies - produces similarities to protos
-    static HDV bundle(const std::vector<HDV> &prototypes) {
+    inline HDV bundle(const std::vector<HDV> &protos) {
         std::vector res(DIMS,0.f);
-        for (const auto &proto:prototypes) {
+        for (const auto &proto:protos) {
             for (int i=0;i<DIMS;i++) {
                 res[i]+=proto[i];
             }
@@ -126,7 +127,7 @@ namespace hdc {
         return HDV(res);
     }
     //binding operation for defining relations - produces dissimilarities to protos
-    static HDV bind(const HDV &hdv1,const HDV &hdv2) {
+    inline HDV bind(const HDV &hdv1,const HDV &hdv2) {
         std::vector res(DIMS,0.f);
         for (int i=0;i<DIMS;i++) {
             res[i]=hdv1[i]*hdv2[i];
@@ -134,7 +135,7 @@ namespace hdc {
         return HDV(res);
     }
     //unbinding operation for recovering relations - z=y*x, x=z*y^-1
-    static HDV unbind(const HDV &binded,const HDV &hdv2) {
+    inline HDV unbind(const HDV &binded,const HDV &hdv2) {
         std::vector res(DIMS,0.f);
         for (int i=0;i<DIMS;i++) {
             res[i]=binded[i]*(1/(hdv2[i]+1e-05));
@@ -142,7 +143,7 @@ namespace hdc {
         return HDV(res);
     }
     //permutation operation for defining sequential relationships - produces an hdv shifted by n
-    static HDV perm(HDV hdv1,const int &shift=1) {
+    inline HDV perm(HDV hdv1,const int &shift=1) {
         //https://bpb-us-e2.wpmucdn.com/sites.uci.edu/dist/4/4834/files/2025/07/Accelerating-permute-and-n-gram-operations-for-hyperdimensional-learning-in-embedded-systems.pdf
         for (int i=0;i<shift;i++) { //better ways may exist
             std::rotate(hdv1.rbegin(),hdv1.rbegin()+1,hdv1.rend());
