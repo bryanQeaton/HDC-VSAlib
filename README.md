@@ -53,9 +53,13 @@ int main() {
 ```
 ### Sources:
 [Intro] An Introduction to Hyperdimensional Computing for Robotics
+
 [PSPL] Understanding Hyperdimensional Computing for Parallel Single-Pass Learning
+
 [Wiki] Hyperdimensional Computing
+
 [SoHDCaVSA] A Survey on Hypersimensional Computing aka Vector Symbolic Architectures
+
 
 [Intro]: <https://redwood.berkeley.edu/wp-content/uploads/2021/08/Neubert2019_Article_AnIntroductionToHyperdimension.pdf>
 [PSPL]: <https://arxiv.org/pdf/2202.04805>
