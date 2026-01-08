@@ -93,12 +93,20 @@ namespace hdc {
             if (!is_normalized()){normalize();}
         }
         //initialize a random hdc
-        HDV() {
-            vec.resize(DIMS);
-            for (auto &item:vec) {
-                item=std::normal_distribution<float>(0,1)(gen);
+        HDV(const bool &null=false) {
+            if (null) {
+                vec.resize(DIMS);
+                for (auto &item:vec) {
+                    item=0.f;
+                }
             }
-            normalize();
+            else {
+                vec.resize(DIMS);
+                for (auto &item:vec) {
+                    item=std::normal_distribution<float>(0,1)(gen);
+                }
+                normalize();
+            }
         }
         //================== END OF INITIALIZERS
 
@@ -108,6 +116,45 @@ namespace hdc {
         }
         float &operator[](const int &idx) {
             return vec[idx];
+        }
+        auto operator+(const HDV &hdv) const {
+            HDV result=*this;
+            for (int i=0;i<DIMS;i++) {
+                result.vec[i]+=hdv.vec[i];
+            }
+            return result;
+        }
+        auto operator+=(const HDV &hdv) {
+            for (int i=0;i<DIMS;i++) {
+                this->vec[i]+=hdv.vec[i];
+            }
+            return this;
+        }
+        auto operator-(const HDV &hdv) const {
+            HDV result=*this;
+            for (int i=0;i<DIMS;i++) {
+                result.vec[i]-=hdv.vec[i];
+            }
+            return result;
+        }
+        auto operator-=(const HDV &hdv) {
+            for (int i=0;i<DIMS;i++) {
+                this->vec[i]-=hdv.vec[i];
+            }
+            return this;
+        }
+        auto operator*(const float &scalar) const {
+            HDV result=*this;
+            for (auto &item:result.vec) {
+                item*=scalar;
+            }
+            return result;
+        }
+        auto operator*=(const float &scalar) {
+            for (auto &item:this->vec) {
+                item*=scalar;
+            }
+            return this;
         }
         //============== END OF OPERATOR OVERLOADS
         //serialize
@@ -174,25 +221,62 @@ namespace hdc {
         }
     }
     struct HDVmap {
-        struct map_query {
+        struct word_query {
             HDV word_hdv{};
+            operator HDV() const {
+                return word_hdv;
+            }
             //serialize
-            map_query()=default;
+            word_query()=default;
             template<class Archive>
             void serialize(Archive &archive) {
                 archive(word_hdv);
             }
         };
-        std::unordered_map<std::string,map_query> map{};
-
-        void build(const std::vector<std::vector<std::string>> &data) {
+        std::unordered_map<std::string,word_query> word_map{};
+        void build(const std::vector<std::vector<std::string>> &data,const float &learning_rate) {
             //to start i need to produce a mapping to random vectors, which will give me a vocabulary to work with
             //then i need to train those vectors to model the relationships in the data
             //if each individual row in the data set is a single instance then no training occurs
-            for (auto group:data) {
-                for (auto conc:group) {
-                    std::cout<<conc;
+            for (const auto &group:data) {
+                if (group.size()<=1) { //no training on single word groupings
+                    continue;
                 }
+                auto group_context=HDV(true);
+                for (int i=0;i<static_cast<int>(group.size());i++) {
+                    if (!word_map.contains(group[i])) { //generate random HDV's for each word
+                        word_map[group[i]].word_hdv=HDV();
+                    }
+                    group_context+=word_map[group[i]].word_hdv; //generate group context based on words
+                }
+                for (int i=0;i<static_cast<int>(group.size());i++) {
+                    HDV target=group_context-word_map[group[i]].word_hdv; //target is the group context minus the current word
+                    target.normalize();
+                    //additive sampling is taking the word hdv and updating it towards the target
+                    word_map[group[i]].word_hdv=word_map[group[i]].word_hdv*(1-learning_rate)+target*learning_rate;
+                    //negative sampling is taking the word hdv and updating it away from a bundle of:
+
+                        //all words not in the current context?
+                        //a subset of words not in the current context?
+                        //a subset of other contexts?
+                        //a subset of all words?
+                        //all words except itself?
+                }
+
+
+
+
+
+                //subtractive sampling should push single words away from other words or contexts away from other contexts
+                //random sampling with noise could be possible to prevent extra overhead
+                //make a set of pairs across entire dataset
+                //delete pairs that share context
+                //push all pairs away from eachother equally
+
+
+                
+
+                
             }
 
 
@@ -216,7 +300,7 @@ namespace hdc {
                 take sentence and break it down to word|context pairing
                 adjust word towards target word via exponential weighted averaging
                 w(t+1)=w(t)*(1-L)+t_w*L
-
+                w(t+1)*=
                 this is also done subtractively across a subset of words in the vocab that ARE NOT
                 part of the current context
                 w(t+1)=w(t)*(1-L)-t_w*L
@@ -242,17 +326,17 @@ namespace hdc {
         void save(const std::string &FILEPATH) const {
             std::ofstream ofs(FILEPATH,std::ios::binary);
             cereal::BinaryOutputArchive archive(ofs);
-            archive(map);
+            archive(word_map);
         }
         explicit HDVmap(const std::string &FILEPATH) {
             std::ifstream ifs(FILEPATH,std::ios::binary);
             cereal::BinaryInputArchive archive(ifs);
-            archive(map);
+            archive(word_map);
         }
         void load(const std::string &FILEPATH) {
             std::ifstream ifs(FILEPATH,std::ios::binary);
             cereal::BinaryInputArchive archive(ifs);
-            archive(map);
+            archive(word_map);
         }
     };
 

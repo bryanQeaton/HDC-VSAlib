@@ -55,26 +55,24 @@ std::vector<std::vector<std::string>> data = {
 };
 
 int main() {
-    auto red=hdc::HDV();
-    auto green=hdc::HDV();
-    auto apple=hdc::HDV();
-    auto red_apple=hdc::bind(red,apple);
-    auto green_apple=hdc::bind(green,apple);
+    int epochs=10;
+    auto model=hdc::HDVmap();
+    model.build(data,0.f);
+    for (int i=1;i<=epochs;i++) {
+        std::cout<<"epoch: "<<i<<"\nlocal contextual similarity:\n";
+        std::cout<<"affection->devotion "<<hdc::similarity::cos(model.word_map["affection"],model.word_map["devotion"])<<"\n";
+        std::cout<<"start->genesis "<<hdc::similarity::cos(model.word_map["start"],model.word_map["genesis"])<<"\n\nglobal contextual similarity:\n";
+        std::cout<<"spirit->breath "<<hdc::similarity::cos(model.word_map["spirit"],model.word_map["breath"])<<"\n";
+        std::cout<<"wisdom->truth "<<hdc::similarity::cos(model.word_map["wisdom"],model.word_map["truth"])<<"\n\nno contextual similarity:\n";
+        std::cout<<"tide->reason "<<hdc::similarity::cos(model.word_map["tide"],model.word_map["reason"])<<"\n";
+        std::cout<<"void->justice "<<hdc::similarity::cos(model.word_map["void"],model.word_map["justice"])<<"\n============================\n";
+        if (i!=epochs) {
+            model.build(data,0.1f);
+        }
 
-    //with binding we can produce hierarchical relationships,
-    //but we must unbind 'travelling up' the hierarchy to decode these relationships:
 
-    //binding produces a new HDV proto dissimilar to its constituent protos x*y=Z
-    std::cout<<"binding:\n"<<hdc::similarity::cos(red,red_apple)<<" :randomly generated HDV's tend to be orthogonal to eachother.\n";
-    //unbinding produces a similar HDV to its constituent proto z*y=x
-    std::cout<<hdc::similarity::cos(red,hdc::unbind(red_apple,apple))<<" :red apple - apple = red\n\nbundling:\n";
+    }
 
-
-    //bundling allows for the defining of set relations
-    auto apples=hdc::bundle({red_apple,green_apple});
-    auto colours=hdc::bundle({red,green});
-    std::cout<<hdc::similarity::cos(apples,red_apple)<<" :red apples are in the apples bundle.\n";
-    std::cout<<hdc::similarity::cos(apples,red)<<" :the concept of red is not in the apples bundle.\n";
 
     return 0;
 }
